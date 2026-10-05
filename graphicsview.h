@@ -38,7 +38,6 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent* e) override;
     void mouseMoveEvent(QMouseEvent* e) override;
-    void mouseReleaseEvent(QMouseEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
 
 private:
@@ -71,19 +70,10 @@ private:
     double m_angleDeg = 45;
     double m_kx = 1.5, m_ky = 1.5;
 
-    QPointF m_offset{0, 0};
-
-    bool m_panning = false;
-    QPoint m_panStart;
-
-    void drawPolygon(QPainter& p, const Polygon& poly,
-                     const QColor& color, bool close);
     Polygon* pickPolygonAt(const Point2D& p);
     void finishCurrentPolygon();
 
     Point2D toWorld(const QPoint& screenPos) const;
-
-    bool pickEdgeAt(const Point2D& p, Point2D& a, Point2D& b) const;
 };
 
 #endif // GRAPHICSVIEW_H

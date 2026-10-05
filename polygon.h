@@ -4,6 +4,8 @@
 #include <QVector>
 #include <QPointF>
 #include <QPolygonF>
+#include <QPainter>
+#include <QColor>
 
 struct Point2D {
     double x, y;
@@ -27,5 +29,8 @@ public:
     bool isConvex() const;
     QPolygonF toQPolygonF() const;
 };
+
+void drawPolygon(QPainter& p, const Polygon& poly,
+                 const QColor& color, bool close);
 
 #endif // POLYGON_H
