@@ -1,31 +1,31 @@
 #include "transformations.h"
 #include <QtMath>
 
-Mat3 translationMatrix(double dx, double dy) {
+QGenericMatrix<3, 3, float> translationMatrix(double dx, double dy) {
     float v[9] = { 1, 0, 0,
                   0, 1, 0,
                   (float)dx, (float)dy, 1 };
-    return Mat3(v);
+    return QGenericMatrix<3, 3, float>(v);
 }
 
-Mat3 rotationMatrix(double phiRad) {
+QGenericMatrix<3, 3, float> rotationMatrix(double phiRad) {
     float c = (float)qCos(phiRad);
     float s = (float)qSin(phiRad);
     float v[9] = {  c,  s, 0,
                   -s,  c, 0,
                   0,  0, 1 };
-    return Mat3(v);
+    return QGenericMatrix<3, 3, float>(v);
 }
 
-Mat3 scaleMatrix(double x, double y) {
+QGenericMatrix<3, 3, float> scaleMatrix(double x, double y) {
     float v[9] = { (float)x, 0, 0,
                   0, (float)y, 0,
                   0, 0, 1 };
-    return Mat3(v);
+    return QGenericMatrix<3, 3, float>(v);
 }
 
-Mat3 multiply(const Mat3& A, const Mat3& B) {
-    Mat3 R;
+QGenericMatrix<3, 3, float> multiply(const QGenericMatrix<3, 3, float>& A, const QGenericMatrix<3, 3, float>& B) {
+    QGenericMatrix<3, 3, float> R;
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j) {
             float sum = 0;
@@ -36,19 +36,19 @@ Mat3 multiply(const Mat3& A, const Mat3& B) {
     return R;
 }
 
-Mat3 rotationAroundPoint(double phiRad, double a, double b) {
+QGenericMatrix<3, 3, float> rotationAroundPoint(double phiRad, double a, double b) {
     return multiply(
         multiply(translationMatrix(-a, -b), rotationMatrix(phiRad)),
         translationMatrix(a, b));
 }
 
-Mat3 scaleAroundPoint(double kx, double ky, double a, double b) {
+QGenericMatrix<3, 3, float> scaleAroundPoint(double kx, double ky, double a, double b) {
     return multiply(
         multiply(translationMatrix(-a, -b), scaleMatrix(kx, ky)),
         translationMatrix(a, b));
 }
 
-void applyTransform(Polygon& poly, const Mat3& M) {
+void applyTransform(Polygon& poly, const QGenericMatrix<3, 3, float>& M) {
     for (Point2D& p : poly.vertices) {
         float x = (float)p.x, y = (float)p.y, w = 1.0f;
         float nx = x * M(0,0) + y * M(1,0) + w * M(2,0);

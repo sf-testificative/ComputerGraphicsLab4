@@ -6,16 +6,16 @@
 
 using Mat3 = QGenericMatrix<3, 3, float>;
 
-Mat3 translationMatrix(double dx, double dy);
-Mat3 rotationMatrix(double phiRad);
-Mat3 scaleMatrix(double kx, double ky);
+QGenericMatrix<3, 3, float> translationMatrix(double dx, double dy);
+QGenericMatrix<3, 3, float> rotationMatrix(double phiRad);
+QGenericMatrix<3, 3, float> scaleMatrix(double kx, double ky);
 
-Mat3 multiply(const Mat3& A, const Mat3& B);
+QGenericMatrix<3, 3, float> multiply(const QGenericMatrix<3, 3, float>& A, const QGenericMatrix<3, 3, float>& B);
 
-Mat3 rotationAroundPoint(double phiRad, double a, double b);
+QGenericMatrix<3, 3, float> rotationAroundPoint(double phiRad, double a, double b);
 
-Mat3 scaleAroundPoint(double kx, double ky, double a, double b);
+QGenericMatrix<3, 3, float> scaleAroundPoint(double kx, double ky, double a, double b);
 
-void applyTransform(Polygon& poly, const Mat3& M);
+void applyTransform(Polygon& poly, const QGenericMatrix<3, 3, float>& M);
 
 #endif

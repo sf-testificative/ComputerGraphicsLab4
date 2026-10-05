@@ -9,6 +9,8 @@
 #include "pointsideofedge.h"
 #include "transformations.h"
 
+#include <cmath>
+
 GraphicsView::GraphicsView(QWidget* parent) : QWidget(parent) {
     setMouseTracking(true);
 }
@@ -48,10 +50,59 @@ Point2D GraphicsView::toWorld(const QPoint& screenPos) const {
     return Point2D(screenPos.x(), screenPos.y());
 }
 
+static double distToSegment(const Point2D& p,
+                            const Point2D& a,
+                            const Point2D& b) {
+    double dx = b.x - a.x;
+    double dy = b.y - a.y;
+    double len2 = dx * dx + dy * dy;
+    if (len2 < 1e-12) {
+        double ddx = p.x - a.x;
+        double ddy = p.y - a.y;
+        return std::sqrt(ddx * ddx + ddy * ddy);
+    }
+    double t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+    if (t < 0) t = 0;
+    if (t > 1) t = 1;
+    double px = a.x + t * dx;
+    double py = a.y + t * dy;
+    double ddx = p.x - px;
+    double ddy = p.y - py;
+    return std::sqrt(ddx * ddx + ddy * ddy);
+}
+
 Polygon* GraphicsView::pickPolygonAt(const Point2D& p) {
-    for (int i = m_polygons.size() - 1; i >= 0; --i)
-        if (pointInPolygon(m_polygons[i], p))
-            return &m_polygons[i];
+    const double HIT_RADIUS = 10.0;
+
+    for (int i = m_polygons.size() - 1; i >= 0; --i) {
+        const Polygon& poly = m_polygons[i];
+
+        if (poly.size() == 0) continue;
+
+        if (poly.size() == 1) {
+            double dx = p.x - poly.vertices[0].x;
+            double dy = p.y - poly.vertices[0].y;
+            if (std::sqrt(dx * dx + dy * dy) <= HIT_RADIUS)
+                return const_cast<Polygon*>(&poly);
+            continue;
+        }
+
+        if (poly.size() == 2) {
+            if (distToSegment(p, poly.vertices[0], poly.vertices[1]) <= HIT_RADIUS)
+                return const_cast<Polygon*>(&poly);
+            continue;
+        }
+
+        if (pointInPolygon(poly, p))
+            return const_cast<Polygon*>(&poly);
+
+        for (int j = 0; j < poly.size(); ++j) {
+            const Point2D& a = poly.vertices[j];
+            const Point2D& b = poly.vertices[(j + 1) % poly.size()];
+            if (distToSegment(p, a, b) <= HIT_RADIUS)
+                return const_cast<Polygon*>(&poly);
+        }
+    }
     return nullptr;
 }
 
