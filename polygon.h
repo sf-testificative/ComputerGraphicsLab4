@@ -30,7 +30,8 @@ public:
     QPolygonF toQPolygonF() const;
 };
 
-void drawPolygon(QPainter& p, const Polygon& poly,
-                 const QColor& color, bool close);
+double distToSegment(const Point2D& p, const Point2D& a, const Point2D& b);
+
+void drawPolygon(QPainter& p, const Polygon& poly, const QColor& color, bool close);
 
 #endif // POLYGON_H

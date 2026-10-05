@@ -1,5 +1,6 @@
 #include "polygon.h"
 #include <QtMath>
+#include <cmath>
 
 QPolygonF Polygon::toQPolygonF() const {
     QPolygonF poly;
@@ -18,7 +19,8 @@ bool Polygon::isConvex() const {
         const Point2D& b = vertices[(i + 1) % n];
         const Point2D& c = vertices[(i + 2) % n];
 
-        double cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+        double cross = (b.x - a.x) * (c.y - b.y)
+                       - (b.y - a.y) * (c.x - b.x);
         if (qAbs(cross) < 1e-9) continue;
 
         int s = (cross > 0) ? 1 : -1;
@@ -28,7 +30,27 @@ bool Polygon::isConvex() const {
     return true;
 }
 
-void drawPolygon(QPainter& p, const Polygon& poly, const QColor& color, bool close) {
+double distToSegment(const Point2D& p, const Point2D& a, const Point2D& b) {
+    double dx = b.x - a.x;
+    double dy = b.y - a.y;
+    double len2 = dx * dx + dy * dy;
+    if (len2 < 1e-12) {
+        double ddx = p.x - a.x;
+        double ddy = p.y - a.y;
+        return std::sqrt(ddx * ddx + ddy * ddy);
+    }
+    double t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+    if (t < 0) t = 0;
+    if (t > 1) t = 1;
+    double px = a.x + t * dx;
+    double py = a.y + t * dy;
+    double ddx = p.x - px;
+    double ddy = p.y - py;
+    return std::sqrt(ddx * ddx + ddy * ddy);
+}
+
+void drawPolygon(QPainter& p, const Polygon& poly,
+                 const QColor& color, bool close) {
     if (poly.isEmpty()) return;
     p.setPen(QPen(color, 2));
     p.setBrush(Qt::NoBrush);

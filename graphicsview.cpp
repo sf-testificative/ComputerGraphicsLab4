@@ -1,6 +1,5 @@
 #include "graphicsview.h"
 #include <QPainter>
-#include <QtMath>
 #include <QStringList>
 #include <QPolygonF>
 
@@ -8,8 +7,7 @@
 #include "pointinpolygon.h"
 #include "pointsideofedge.h"
 #include "transformations.h"
-
-#include <cmath>
+#include "polygon.h"
 
 GraphicsView::GraphicsView(QWidget* parent) : QWidget(parent) {
     setMouseTracking(true);
@@ -48,27 +46,6 @@ void GraphicsView::finishCurrentPolygon() {
 
 Point2D GraphicsView::toWorld(const QPoint& screenPos) const {
     return Point2D(screenPos.x(), screenPos.y());
-}
-
-static double distToSegment(const Point2D& p,
-                            const Point2D& a,
-                            const Point2D& b) {
-    double dx = b.x - a.x;
-    double dy = b.y - a.y;
-    double len2 = dx * dx + dy * dy;
-    if (len2 < 1e-12) {
-        double ddx = p.x - a.x;
-        double ddy = p.y - a.y;
-        return std::sqrt(ddx * ddx + ddy * ddy);
-    }
-    double t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
-    if (t < 0) t = 0;
-    if (t > 1) t = 1;
-    double px = a.x + t * dx;
-    double py = a.y + t * dy;
-    double ddx = p.x - px;
-    double ddy = p.y - py;
-    return std::sqrt(ddx * ddx + ddy * ddy);
 }
 
 Polygon* GraphicsView::pickPolygonAt(const Point2D& p) {
