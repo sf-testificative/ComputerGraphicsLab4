@@ -16,9 +16,10 @@ void GraphicsView::setTool(Tool t) {
     m_secondEdge.clear();
     m_hasIntersection = false;
     m_hasTestPoint = false;
-    m_edgePoints.clear();
     m_hasCenterPoint = false;
     m_hasMousePos = false;
+    m_hasFirstEdge = false;
+    m_hasSideEdge = false;
     update();
 }
 
@@ -28,8 +29,9 @@ void GraphicsView::clearScene() {
     m_secondEdge.clear();
     m_hasIntersection = false;
     m_hasTestPoint = false;
-    m_edgePoints.clear();
     m_hasCenterPoint = false;
+    m_hasFirstEdge = false;
+    m_hasSideEdge = false;
     update();
 }
 
@@ -45,12 +47,42 @@ Point2D GraphicsView::toWorld(const QPoint& screenPos) const {
                    screenPos.y() - m_offset.y());
 }
 
-bool GraphicsView::getLastEdge(Point2D& a, Point2D& b) const {
-    if (m_polygons.isEmpty()) return false;
-    const Polygon& poly = m_polygons.last();
-    if (poly.size() < 2) return false;
-    a = poly.vertices[poly.size() - 2];
-    b = poly.vertices[poly.size() - 1];
+bool GraphicsView::pickEdgeAt(const Point2D& p, Point2D& a, Point2D& b) const {
+    Polygon* poly = nullptr;
+    for (int i = m_polygons.size() - 1; i >= 0; --i) {
+        if (pointInPolygon(m_polygons[i], p)) {
+            poly = const_cast<Polygon*>(&m_polygons[i]);
+            break;
+        }
+    }
+    if (!poly || poly->size() < 2) return false;
+
+    int n = poly->size();
+    double bestDist = 1e18;
+    int bestIdx = -1;
+    for (int i = 0; i < n; ++i) {
+        const Point2D& v1 = poly->vertices[i];
+        const Point2D& v2 = poly->vertices[(i + 1) % n];
+
+        double dx = v2.x - v1.x;
+        double dy = v2.y - v1.y;
+        double len2 = dx * dx + dy * dy;
+        if (len2 < 1e-12) continue;
+
+        double t = ((p.x - v1.x) * dx + (p.y - v1.y) * dy) / len2;
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+        double px = v1.x + t * dx;
+        double py = v1.y + t * dy;
+        double dist = (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py);
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = i;
+        }
+    }
+    if (bestIdx < 0) return false;
+    a = poly->vertices[bestIdx];
+    b = poly->vertices[(bestIdx + 1) % n];
     return true;
 }
 
@@ -148,12 +180,21 @@ void GraphicsView::mousePressEvent(QMouseEvent* e) {
     }
 
     case Tool::EdgeIntersection: {
-        Point2D a, b;
-        if (!getLastEdge(a, b)) break;
-
         if (e->button() == Qt::RightButton) {
+            m_hasFirstEdge = false;
             m_secondEdge.clear();
             m_hasIntersection = false;
+            update();
+            break;
+        }
+
+        if (!m_hasFirstEdge) {
+            Point2D a, b;
+            if (pickEdgeAt(p, a, b)) {
+                m_firstEdgeA = a;
+                m_firstEdgeB = b;
+                m_hasFirstEdge = true;
+            }
             update();
             break;
         }
@@ -163,7 +204,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e) {
         if (m_secondEdge.size() == 2) {
             bool inside = false;
             m_hasIntersection = segmentIntersection(
-                a, b,
+                m_firstEdgeA, m_firstEdgeB,
                 m_secondEdge[0], m_secondEdge[1],
                 m_intersectionPoint, inside);
             if (m_hasIntersection)
@@ -197,16 +238,30 @@ void GraphicsView::mousePressEvent(QMouseEvent* e) {
     }
 
     case Tool::PointSideOfEdge: {
-        m_edgePoints.append(p);
-
-        if (m_edgePoints.size() == 3) {
-            double s = pointSideRelativeToEdge(
-                m_edgePoints[0], m_edgePoints[1], m_edgePoints[2]);
-            QString side = (s > 0) ? "СЛЕВА"
-                          : (s < 0 ? "СПРАВА" : "НА ПРЯМОЙ");
-            emit statusMessage(QString("Точка %1 относительно ребра").arg(side));
-            m_edgePoints.clear();
+        if (e->button() == Qt::RightButton) {
+            Point2D a, b;
+            if (pickEdgeAt(p, a, b)) {
+                m_sideEdgeA = a;
+                m_sideEdgeB = b;
+                m_hasSideEdge = true;
+                emit statusMessage("Ребро выбрано. Кликните точку.");
+            } else {
+                emit statusMessage("Ребро не найдено. Кликните ближе к ребру полигона.");
+            }
+            update();
+            break;
         }
+
+        if (!m_hasSideEdge) {
+            emit statusMessage("Сначала выберите ребро правой кнопкой мыши.");
+            break;
+        }
+
+        double s = pointSideRelativeToEdge(m_sideEdgeA, m_sideEdgeB, p);
+        QString side = (s > 0) ? "СЛЕВА"
+                      : (s < 0 ? "СПРАВА" : "НА ПРЯМОЙ");
+        emit statusMessage(QString("Точка %1 относительно ребра (s = %2)")
+                           .arg(side).arg(s, 0, 'f', 2));
         update();
         break;
     }
@@ -296,10 +351,9 @@ void GraphicsView::paintEvent(QPaintEvent* e) {
     }
 
     if (m_tool == Tool::EdgeIntersection) {
-        Point2D a, b;
-        if (getLastEdge(a, b)) {
+        if (m_hasFirstEdge) {
             p.setPen(QPen(Qt::magenta, 3));
-            p.drawLine(a.toQPointF(), b.toQPointF());
+            p.drawLine(m_firstEdgeA.toQPointF(), m_firstEdgeB.toQPointF());
 
             p.setPen(QPen(Qt::blue, 2));
             if (m_secondEdge.size() == 1) {
@@ -322,16 +376,8 @@ void GraphicsView::paintEvent(QPaintEvent* e) {
         }
     }
 
-    if (m_tool == Tool::PointSideOfEdge) {
-        p.setPen(QPen(Qt::darkGreen, 2));
-        p.setBrush(Qt::darkGreen);
-        for (int i = 0; i < m_edgePoints.size() && i < 2; ++i)
-            p.drawEllipse(m_edgePoints[i].toQPointF(), 5, 5);
-
-        if (m_edgePoints.size() >= 2) {
-            p.setPen(QPen(Qt::darkGreen, 2));
-            p.drawLine(m_edgePoints[0].toQPointF(),
-                       m_edgePoints[1].toQPointF());
-        }
+    if (m_tool == Tool::PointSideOfEdge && m_hasSideEdge) {
+        p.setPen(QPen(Qt::darkGreen, 3));
+        p.drawLine(m_sideEdgeA.toQPointF(), m_sideEdgeB.toQPointF());
     }
 }

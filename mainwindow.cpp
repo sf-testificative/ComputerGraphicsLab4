@@ -151,7 +151,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
             [this](const QString& msg) { m_statusLabel->setText(msg); });
 
     resize(1200, 800);
-    setWindowTitle("Лабораторная: Аффинные преобразования и векторные алгоритмы");
+    setWindowTitle("Lab 4");
 }
 
 Tool MainWindow::toolFromAction(QAction* a) const {

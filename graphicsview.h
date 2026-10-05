@@ -50,12 +50,16 @@ private:
     Point2D m_testPoint;
     bool m_hasTestPoint = false;
 
+    bool m_hasFirstEdge = false;
+    Point2D m_firstEdgeA;
+    Point2D m_firstEdgeB;
     QVector<Point2D> m_secondEdge;
     bool m_hasIntersection = false;
     Point2D m_intersectionPoint;
 
-    QVector<Point2D> m_edgePoints;
-    double m_sideResult = 0;
+    bool m_hasSideEdge = false;
+    Point2D m_sideEdgeA;
+    Point2D m_sideEdgeB;
 
     Point2D m_centerPoint;
     bool m_hasCenterPoint = false;
@@ -79,7 +83,7 @@ private:
 
     Point2D toWorld(const QPoint& screenPos) const;
 
-    bool getLastEdge(Point2D& a, Point2D& b) const;
+    bool pickEdgeAt(const Point2D& p, Point2D& a, Point2D& b) const;
 };
 
 #endif // GRAPHICSVIEW_H
