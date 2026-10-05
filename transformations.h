@@ -18,4 +18,4 @@ Mat3 scaleAroundPoint(double kx, double ky, double a, double b);
 
 void applyTransform(Polygon& poly, const Mat3& M);
 
-#endif // TRANSFORMATIONS_H
+#endif

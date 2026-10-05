@@ -17,9 +17,9 @@ Mat3 rotationMatrix(double phiRad) {
     return Mat3(v);
 }
 
-Mat3 scaleMatrix(double kx, double ky) {
-    float v[9] = { (float)kx, 0, 0,
-                  0, (float)ky, 0,
+Mat3 scaleMatrix(double x, double y) {
+    float v[9] = { (float)x, 0, 0,
+                  0, (float)y, 0,
                   0, 0, 1 };
     return Mat3(v);
 }
