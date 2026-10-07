@@ -252,10 +252,16 @@ void GraphicsView::mousePressEvent(QMouseEvent* e) {
                 m_firstEdgeA, m_firstEdgeB,
                 m_secondEdge[0], m_secondEdge[1],
                 m_intersectionPoint, inside);
-            if (m_hasIntersection)
+            if (m_hasIntersection){
                 emit statusMessage(QString("Пересечение: (%1, %2)")
                     .arg(m_intersectionPoint.x, 0, 'f', 2)
                     .arg(m_intersectionPoint.y, 0, 'f', 2));
+                QPainter p(this);
+                p.setPen(QPen(Qt::red, 3));
+                p.setBrush(Qt::yellow);
+                p.drawEllipse(m_intersectionPoint.toQPointF(), 7, 7);
+
+            }
             else
                 emit statusMessage("Прямые параллельны или совпадают");
         } else if (m_secondEdge.size() > 2) {
