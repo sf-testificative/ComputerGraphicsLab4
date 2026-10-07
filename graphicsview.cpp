@@ -64,6 +64,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
             update();
         } else if (e->button() == Qt::RightButton) {
             finishCurrentPolygon();
+
         }
         break;
 

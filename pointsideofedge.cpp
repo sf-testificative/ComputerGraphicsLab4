@@ -35,7 +35,7 @@ bool pickNearestEdge(const QVector<Polygon>& polys, const Point2D& p, Point2D& a
             double px = v1.x + t * dx;
             double py = v1.y + t * dy;
             double dist = (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py);
-            if (dist < bestDist && dist <= maxDist * maxDist) {
+                if (dist < bestDist && dist <= maxDist * maxDist) {
                 bestDist = dist;
                 bestA = v1;
                 bestB = v2;
