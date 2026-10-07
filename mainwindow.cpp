@@ -1,14 +1,15 @@
 #include "mainwindow.h"
-#include <QMenu>
-#include <QMenuBar>
-#include <QStatusBar>
 #include <QWidget>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QPushButton>
 #include <QLabel>
+#include <QStatusBar>
+#include <QMenuBar>
+#include <QMenu>
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QWidget* central = new QWidget(this);
@@ -23,13 +24,34 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QFrame* panel = new QFrame(central);
     panel->setFrameShape(QFrame::StyledPanel);
     panel->setFrameShadow(QFrame::Raised);
-    panel->setFixedWidth(240);
+    panel->setFixedWidth(300);
 
     QVBoxLayout* panelLayout = new QVBoxLayout(panel);
-    panelLayout->setContentsMargins(12, 12, 12, 12);
-    panelLayout->setSpacing(12);
+    panelLayout->setContentsMargins(10, 10, 10, 10);
+    panelLayout->setSpacing(10);
 
-    QGroupBox* moveBox = new QGroupBox("Перенос (dx, dy)", panel);
+    QGroupBox* toolBox = new QGroupBox("Инструменты", panel);
+    QVBoxLayout* toolLayout = new QVBoxLayout(toolBox);
+    toolLayout->setSpacing(4);
+
+    m_toolGroup = new QButtonGroup(this);
+    m_toolGroup->setExclusive(true);
+
+    addToolButton(toolLayout, static_cast<int>(Tool::CreatePolygon), "Создать полигон");
+    addToolButton(toolLayout, static_cast<int>(Tool::MovePolygon), "Смещение");
+    addToolButton(toolLayout, static_cast<int>(Tool::RotatePolygonAroundPoint), "Поворот вокруг точки");
+    addToolButton(toolLayout, static_cast<int>(Tool::RotatePolygonAroundCenter), "Поворот вокруг центра полигона");
+    addToolButton(toolLayout, static_cast<int>(Tool::ScalePolygonAroundPoint), "Масштаб вокруг точки");
+    addToolButton(toolLayout, static_cast<int>(Tool::ScalePolygonAroundCenter), "Масштаб вокруг центра полигона");
+    addToolButton(toolLayout, static_cast<int>(Tool::EdgeIntersection), "Пересечение двух рёбер");
+    addToolButton(toolLayout, static_cast<int>(Tool::PointInPolygon), "Принадлежность точки полигону");
+    addToolButton(toolLayout, static_cast<int>(Tool::PointSideOfEdge), "Точка слева/справа от ребра");
+
+    connect(m_toolGroup, &QButtonGroup::idClicked, this, &MainWindow::onToolButtonClicked);
+
+    panelLayout->addWidget(toolBox);
+
+    QGroupBox* moveBox = new QGroupBox("Перенос", panel);
     QFormLayout* moveForm = new QFormLayout(moveBox);
 
     m_dxSpin = new QDoubleSpinBox(moveBox);
@@ -58,7 +80,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     rotForm->addRow("Угол:", m_angleSpin);
     panelLayout->addWidget(rotBox);
 
-    QGroupBox* scaleBox = new QGroupBox("Масштаб (kx, ky)", panel);
+    QGroupBox* scaleBox = new QGroupBox("Масштаб", panel);
     QFormLayout* scaleForm = new QFormLayout(scaleBox);
 
     m_kxSpin = new QDoubleSpinBox(scaleBox);
@@ -77,6 +99,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     scaleForm->addRow("ky:", m_kySpin);
     panelLayout->addWidget(scaleBox);
 
+    QPushButton* clearBtn = new QPushButton("Очистить сцену", panel);
+    connect(clearBtn, &QPushButton::clicked, this, &MainWindow::onClearScene);
+    panelLayout->addWidget(clearBtn);
+
     panelLayout->addStretch();
 
     mainLayout->addWidget(panel, 0);
@@ -90,60 +116,36 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     onUpdateParams();
 
-    QMenu* fileMenu = menuBar()->addMenu("Файл");
-
-    QAction* clearAct = fileMenu->addAction("Очистить сцену");
-    clearAct->setShortcut(QKeySequence("Ctrl+N"));
-    connect(clearAct, &QAction::triggered, this, &MainWindow::onClearScene);
-
-    fileMenu->addSeparator();
-
-    QAction* exitAct = fileMenu->addAction("Выход");
-    exitAct->setShortcut(QKeySequence("Ctrl+Q"));
-    connect(exitAct, &QAction::triggered, this, &QWidget::close);
-
-    QMenu* toolMenu = menuBar()->addMenu("Инструменты");
-    QActionGroup* group = new QActionGroup(this);
-    group->setExclusive(true);
-
-    auto addTool = [&](const QString& name, Tool t, const QString& shortcut) {
-        QAction* a = toolMenu->addAction(name);
-        a->setCheckable(true);
-        a->setShortcut(QKeySequence(shortcut));
-        a->setData(static_cast<int>(t));
-        group->addAction(a);
-    };
-
-    addTool("Создать полигон (ЛКМ — точка, ПКМ — завершить)", Tool::CreatePolygon, "1");
-    addTool("Смещение", Tool::MovePolygon, "2");
-    addTool("Поворот вокруг точки", Tool::RotatePolygonAroundPoint, "3");
-    addTool("Поворот вокруг центра полигона", Tool::RotatePolygonAroundCenter, "4");
-    addTool("Масштаб вокруг точки", Tool::ScalePolygonAroundPoint, "5");
-    addTool("Масштаб вокруг центра полигона", Tool::ScalePolygonAroundCenter, "6");
-    addTool("Пересечение двух рёбер", Tool::EdgeIntersection, "7");
-    addTool("Принадлежность точки полигону", Tool::PointInPolygon, "8");
-    addTool("Точка слева/справа от ребра", Tool::PointSideOfEdge, "9");
-
-    connect(group, &QActionGroup::triggered, this, &MainWindow::onToolChanged);
-    group->actions().first()->setChecked(true);
+    m_toolGroup->button(static_cast<int>(Tool::CreatePolygon))->setChecked(true);
     m_view->setTool(Tool::CreatePolygon);
 
-    m_statusLabel = new QLabel("Готово. ЛКМ — добавить точку, ПКМ — завершить полигон.", this);
+    m_statusLabel = new QLabel("ЛКМ — добавить точку, ПКМ — завершить полигон.", this);
     statusBar()->addWidget(m_statusLabel);
 
     connect(m_view, &GraphicsView::statusMessage, this, [this](const QString& msg) { m_statusLabel->setText(msg); });
 
-    resize(1200, 800);
+    resize(1280, 800);
     setWindowTitle("Lab 4");
 }
 
-Tool MainWindow::toolFromAction(QAction* a) const {
-    return static_cast<Tool>(a->data().toInt());
+void MainWindow::addToolButton(QVBoxLayout* layout, int id, const QString& text) {
+    QToolButton* btn = new QToolButton(this);
+    btn->setText(text);
+    btn->setCheckable(true);
+    btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    btn->setMinimumHeight(32);
+    btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    btn->setAutoRaise(false);
+
+    m_toolGroup->addButton(btn, id);
+    layout->addWidget(btn);
 }
 
-void MainWindow::onToolChanged(QAction* action) {
-    m_view->setTool(toolFromAction(action));
-    m_statusLabel->setText("Инструмент: " + action->text());
+void MainWindow::onToolButtonClicked(int id) {
+    m_view->setTool(static_cast<Tool>(id));
+    QToolButton* btn = qobject_cast<QToolButton*>(m_toolGroup->button(id));
+    if (btn)
+        m_statusLabel->setText("Инструмент: " + btn->text());
 }
 
 void MainWindow::onClearScene() {
