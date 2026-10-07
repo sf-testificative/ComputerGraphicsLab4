@@ -70,9 +70,7 @@ private:
     double m_angleDeg = 45;
     double m_kx = 1.5, m_ky = 1.5;
 
-    Polygon* pickPolygonAt(const Point2D& p);
     void finishCurrentPolygon();
-
     Point2D toWorld(const QPoint& screenPos) const;
 };
 

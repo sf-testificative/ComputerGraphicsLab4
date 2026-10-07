@@ -45,3 +45,36 @@ bool pointInPolygon(const Polygon& poly, const Point2D& p) {
     }
     return inside;
 }
+
+Polygon* pickPolygonAt(const QVector<Polygon>& polygons, const Point2D& p, double hitRadius) {
+    for (int i = polygons.size() - 1; i >= 0; --i) {
+        const Polygon& poly = polygons[i];
+
+        if (poly.size() == 0) continue;
+
+        if (poly.size() == 1) {
+            double dx = p.x - poly.vertices[0].x;
+            double dy = p.y - poly.vertices[0].y;
+            if (std::sqrt(dx * dx + dy * dy) <= hitRadius)
+                return const_cast<Polygon*>(&poly);
+            continue;
+        }
+
+        if (poly.size() == 2) {
+            if (distToSegment(p, poly.vertices[0], poly.vertices[1]) <= hitRadius)
+                return const_cast<Polygon*>(&poly);
+            continue;
+        }
+
+        if (pointInPolygon(poly, p))
+            return const_cast<Polygon*>(&poly);
+
+        for (int j = 0; j < poly.size(); ++j) {
+            const Point2D& a = poly.vertices[j];
+            const Point2D& b = poly.vertices[(j + 1) % poly.size()];
+            if (distToSegment(p, a, b) <= hitRadius)
+                return const_cast<Polygon*>(&poly);
+        }
+    }
+    return nullptr;
+}

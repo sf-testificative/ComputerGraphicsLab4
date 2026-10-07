@@ -2,6 +2,7 @@
 #include <QPainter>
 #include <QPolygonF>
 #include <QStringList>
+#include <cmath>
 
 #include "pointinpolygon.h"
 #include "pointsideofedge.h"
@@ -9,7 +10,7 @@
 #include "segmentintersection.h"
 #include "transformations.h"
 
-GraphicsView::GraphicsView(QWidget *parent)
+GraphicsView::GraphicsView(QWidget* parent)
     : QWidget(parent)
 {
     setMouseTracking(true);
@@ -49,49 +50,12 @@ void GraphicsView::finishCurrentPolygon()
     update();
 }
 
-Point2D GraphicsView::toWorld(const QPoint &screenPos) const
+Point2D GraphicsView::toWorld(const QPoint& screenPos) const
 {
     return Point2D(screenPos.x(), screenPos.y());
 }
 
-Polygon *GraphicsView::pickPolygonAt(const Point2D &p)
-{
-    const double HIT_RADIUS = 10.0;
-
-    for (int i = m_polygons.size() - 1; i >= 0; --i) {
-        const Polygon &poly = m_polygons[i];
-
-        if (poly.size() == 0)
-            continue;
-
-        if (poly.size() == 1) {
-            double dx = p.x - poly.vertices[0].x;
-            double dy = p.y - poly.vertices[0].y;
-            if (std::sqrt(dx * dx + dy * dy) <= HIT_RADIUS)
-                return const_cast<Polygon *>(&poly);
-            continue;
-        }
-
-        if (poly.size() == 2) {
-            if (distToSegment(p, poly.vertices[0], poly.vertices[1]) <= HIT_RADIUS)
-                return const_cast<Polygon *>(&poly);
-            continue;
-        }
-
-        if (pointInPolygon(poly, p))
-            return const_cast<Polygon *>(&poly);
-
-        for (int j = 0; j < poly.size(); ++j) {
-            const Point2D &a = poly.vertices[j];
-            const Point2D &b = poly.vertices[(j + 1) % poly.size()];
-            if (distToSegment(p, a, b) <= HIT_RADIUS)
-                return const_cast<Polygon *>(&poly);
-        }
-    }
-    return nullptr;
-}
-
-void GraphicsView::mousePressEvent(QMouseEvent *e)
+void GraphicsView::mousePressEvent(QMouseEvent* e)
 {
     Point2D p = toWorld(e->pos());
 
@@ -106,7 +70,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
         break;
 
     case Tool::MovePolygon: {
-        Polygon *poly = pickPolygonAt(p);
+        Polygon* poly = pickPolygonAt(m_polygons, p);
         if (poly) {
             applyTransform(*poly, translationMatrix(m_dx, m_dy));
             update();
@@ -119,7 +83,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
             m_centerPoint = p;
             m_hasCenterPoint = true;
         } else {
-            Polygon *poly = pickPolygonAt(p);
+            Polygon* poly = pickPolygonAt(m_polygons, p);
             if (poly) {
                 applyTransform(*poly,
                                rotationAroundPoint(qDegreesToRadians(m_angleDeg),
@@ -132,10 +96,10 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
         break;
 
     case Tool::RotatePolygonAroundCenter: {
-        Polygon *poly = pickPolygonAt(p);
+        Polygon* poly = pickPolygonAt(m_polygons, p);
         if (poly && poly->size() > 0) {
             double cx = 0, cy = 0;
-            for (const Point2D &v : poly->vertices) {
+            for (const Point2D& v : poly->vertices) {
                 cx += v.x;
                 cy += v.y;
             }
@@ -152,7 +116,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
             m_centerPoint = p;
             m_hasCenterPoint = true;
         } else {
-            Polygon *poly = pickPolygonAt(p);
+            Polygon* poly = pickPolygonAt(m_polygons, p);
             if (poly) {
                 applyTransform(*poly,
                                scaleAroundPoint(m_kx, m_ky, m_centerPoint.x, m_centerPoint.y));
@@ -163,10 +127,10 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
         break;
 
     case Tool::ScalePolygonAroundCenter: {
-        Polygon *poly = pickPolygonAt(p);
+        Polygon* poly = pickPolygonAt(m_polygons, p);
         if (poly && poly->size() > 0) {
             double cx = 0, cy = 0;
-            for (const Point2D &v : poly->vertices) {
+            for (const Point2D& v : poly->vertices) {
                 cx += v.x;
                 cy += v.y;
             }
@@ -207,18 +171,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
                 m_firstEdgeA, m_firstEdgeB,
                 m_secondEdge[0], m_secondEdge[1],
                 m_intersectionPoint, inside);
-            if (m_hasIntersection){
+            if (m_hasIntersection) {
                 emit statusMessage(QString("Пересечение: (%1, %2)")
-                    .arg(m_intersectionPoint.x, 0, 'f', 2)
-                    .arg(m_intersectionPoint.y, 0, 'f', 2));
-                QPainter p(this);
-                p.setPen(QPen(Qt::red, 3));
-                p.setBrush(Qt::yellow);
-                p.drawEllipse(m_intersectionPoint.toQPointF(), 7, 7);
-
-            }
-            else
+                                       .arg(m_intersectionPoint.x, 0, 'f', 2)
+                                       .arg(m_intersectionPoint.y, 0, 'f', 2));
+            } else {
                 emit statusMessage("Прямые параллельны или совпадают");
+            }
         } else if (m_secondEdge.size() > 2) {
             m_secondEdge.clear();
             m_secondEdge.append(p);
@@ -235,8 +194,9 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
                 results << QString("Полигон #%1 (%2)")
                                .arg(i + 1)
                                .arg(m_polygons[i].isConvex() ? "выпуклый" : "невыпуклый");
-        emit statusMessage(results.isEmpty() ? "Точка не принадлежит ни одному полигону"
-                                             : "Точка внутри: " + results.join(", "));
+        emit statusMessage(results.isEmpty()
+                               ? "Точка не принадлежит ни одному полигону"
+                               : "Точка внутри: " + results.join(", "));
         m_testPoint = p;
         m_hasTestPoint = true;
         update();
@@ -273,14 +233,14 @@ void GraphicsView::mousePressEvent(QMouseEvent *e)
     }
 }
 
-void GraphicsView::mouseMoveEvent(QMouseEvent *e)
+void GraphicsView::mouseMoveEvent(QMouseEvent* e)
 {
     m_mousePos = toWorld(e->pos());
     m_hasMousePos = true;
     update();
 }
 
-void GraphicsView::paintEvent(QPaintEvent *e)
+void GraphicsView::paintEvent(QPaintEvent* e)
 {
     Q_UNUSED(e);
 
@@ -288,7 +248,7 @@ void GraphicsView::paintEvent(QPaintEvent *e)
     p.setRenderHint(QPainter::Antialiasing);
     p.fillRect(rect(), Qt::white);
 
-    for (const Polygon &poly : m_polygons) {
+    for (const Polygon& poly : m_polygons) {
         drawPolygon(p, poly, QColor(0, 100, 200), true);
     }
 
