@@ -1,4 +1,6 @@
 #include "pointsideofedge.h"
+#include <QPolygonF>
+#include <QtMath>
 #include <cmath>
 
 double pointSideRelativeToEdge(const Point2D& a, const Point2D& b, const Point2D& p) {
@@ -45,4 +47,35 @@ bool pickNearestEdge(const QVector<Polygon>& polys, const Point2D& p, Point2D& a
     a = bestA;
     b = bestB;
     return true;
+}
+
+void drawEdgeWithArrow(QPainter& p, const Point2D& a, const Point2D& b, const QColor& color) {
+    p.setPen(QPen(color, 3));
+    p.drawLine(a.toQPointF(), b.toQPointF());
+
+    double dx = b.x - a.x;
+    double dy = b.y - a.y;
+    double len = std::sqrt(dx * dx + dy * dy);
+    if (len < 1e-6) return;
+
+    double ux = dx / len;
+    double uy = dy / len;
+    double px = -uy;
+    double py = ux;
+
+    double midX = (a.x + b.x) / 2.0;
+    double midY = (a.y + b.y) / 2.0;
+
+    double arrowLen   = 16.0;
+    double arrowWidth = 7.0;
+
+    QPointF tip(midX + ux * arrowLen, midY + uy * arrowLen);
+    QPointF left(midX - ux * arrowLen + px * arrowWidth, midY - uy * arrowLen + py * arrowWidth);
+    QPointF right(midX - ux * arrowLen - px * arrowWidth, midY - uy * arrowLen - py * arrowWidth);
+
+    QPolygonF arrow;
+    arrow << tip << left << right;
+    p.setBrush(color);
+    p.setPen(QPen(color, 2));
+    p.drawPolygon(arrow);
 }

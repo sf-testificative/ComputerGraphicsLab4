@@ -1,6 +1,5 @@
 #include "graphicsview.h"
 #include <QPainter>
-#include <QPolygonF>
 #include <QStringList>
 #include <cmath>
 
@@ -10,8 +9,7 @@
 #include "segmentintersection.h"
 #include "transformations.h"
 
-GraphicsView::GraphicsView(QWidget* parent)
-    : QWidget(parent)
+GraphicsView::GraphicsView(QWidget* parent): QWidget(parent)
 {
     setMouseTracking(true);
 }
@@ -250,59 +248,10 @@ void GraphicsView::paintEvent(QPaintEvent* e)
     }
 
     if (m_tool == Tool::EdgeIntersection) {
-        if (m_hasFirstEdge) {
-            p.setPen(QPen(Qt::magenta, 3));
-            p.drawLine(m_firstEdgeA.toQPointF(), m_firstEdgeB.toQPointF());
-
-            p.setPen(QPen(Qt::blue, 2));
-            if (m_secondEdge.size() == 1) {
-                p.drawLine(m_secondEdge[0].toQPointF(), m_mousePos.toQPointF());
-                p.setBrush(Qt::blue);
-                p.drawEllipse(m_secondEdge[0].toQPointF(), 5, 5);
-            } else if (m_secondEdge.size() == 2) {
-                p.drawLine(m_secondEdge[0].toQPointF(), m_secondEdge[1].toQPointF());
-                p.setBrush(Qt::blue);
-                p.drawEllipse(m_secondEdge[0].toQPointF(), 5, 5);
-                p.drawEllipse(m_secondEdge[1].toQPointF(), 5, 5);
-            }
-
-            if (m_hasIntersection) {
-                p.setPen(QPen(Qt::red, 3));
-                p.setBrush(Qt::yellow);
-                p.drawEllipse(m_intersectionPoint.toQPointF(), 7, 7);
-            }
-        }
+        drawEdgeIntersection(p, m_hasFirstEdge, m_firstEdgeA, m_firstEdgeB, m_secondEdge, m_mousePos, m_hasIntersection, m_intersectionPoint);
     }
 
     if (m_tool == Tool::PointSideOfEdge && m_hasSideEdge) {
-        p.setPen(QPen(Qt::darkGreen, 3));
-        p.drawLine(m_sideEdgeA.toQPointF(), m_sideEdgeB.toQPointF());
-
-        double dx = m_sideEdgeB.x - m_sideEdgeA.x;
-        double dy = m_sideEdgeB.y - m_sideEdgeA.y;
-        double len = std::sqrt(dx * dx + dy * dy);
-
-        if (len > 1e-6) {
-            double ux = dx / len;
-            double uy = dy / len;
-            double px = -uy;
-            double py = ux;
-
-            double midX = (m_sideEdgeA.x + m_sideEdgeB.x) / 2.0;
-            double midY = (m_sideEdgeA.y + m_sideEdgeB.y) / 2.0;
-
-            double arrowLen = 16.0;
-            double arrowWidth = 7.0;
-
-            QPointF tip(midX + ux * arrowLen, midY + uy * arrowLen);
-            QPointF left(midX - ux * arrowLen + px * arrowWidth, midY - uy * arrowLen + py * arrowWidth);
-            QPointF right(midX - ux * arrowLen - px * arrowWidth, midY - uy * arrowLen - py * arrowWidth);
-
-            QPolygonF arrow;
-            arrow << tip << left << right;
-            p.setBrush(Qt::darkGreen);
-            p.setPen(QPen(Qt::darkGreen, 2));
-            p.drawPolygon(arrow);
-        }
+        drawEdgeWithArrow(p, m_sideEdgeA, m_sideEdgeB, Qt::darkGreen);
     }
 }
