@@ -6,8 +6,7 @@ bool pointInPolygon(const Polygon& poly, const Point2D& p) {
     int n = poly.size();
 
     if (n == 1) {
-        return qAbs(poly.vertices[0].x - p.x) < 1e-6 &&
-               qAbs(poly.vertices[0].y - p.y) < 1e-6;
+        return qAbs(poly.vertices[0].x - p.x) < 1e-6 && qAbs(poly.vertices[0].y - p.y) < 1e-6;
     }
 
     if (n == 2) {
@@ -17,8 +16,7 @@ bool pointInPolygon(const Polygon& poly, const Point2D& p) {
         double maxX = qMax(poly.vertices[0].x, poly.vertices[1].x);
         double minY = qMin(poly.vertices[0].y, poly.vertices[1].y);
         double maxY = qMax(poly.vertices[0].y, poly.vertices[1].y);
-        return p.x >= minX - 1e-6 && p.x <= maxX + 1e-6 &&
-               p.y >= minY - 1e-6 && p.y <= maxY + 1e-6;
+        return p.x >= minX - 1e-6 && p.x <= maxX + 1e-6 && p.y >= minY - 1e-6 && p.y <= maxY + 1e-6;
     }
 
     if (poly.isConvex()) {

@@ -82,32 +82,27 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     mainLayout->addWidget(panel, 0);
     setCentralWidget(central);
 
-    connect(m_dxSpin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &MainWindow::onUpdateParams);
-    connect(m_dySpin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &MainWindow::onUpdateParams);
-    connect(m_angleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &MainWindow::onUpdateParams);
-    connect(m_kxSpin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &MainWindow::onUpdateParams);
-    connect(m_kySpin,    QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            this, &MainWindow::onUpdateParams);
+    connect(m_dxSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onUpdateParams);
+    connect(m_dySpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onUpdateParams);
+    connect(m_angleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onUpdateParams);
+    connect(m_kxSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onUpdateParams);
+    connect(m_kySpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &MainWindow::onUpdateParams);
 
     onUpdateParams();
 
-    QMenu* fileMenu = menuBar()->addMenu("&Файл");
+    QMenu* fileMenu = menuBar()->addMenu("Файл");
 
-    QAction* clearAct = fileMenu->addAction("&Очистить сцену");
+    QAction* clearAct = fileMenu->addAction("Очистить сцену");
     clearAct->setShortcut(QKeySequence("Ctrl+N"));
     connect(clearAct, &QAction::triggered, this, &MainWindow::onClearScene);
 
     fileMenu->addSeparator();
 
-    QAction* exitAct = fileMenu->addAction("В&ыход");
+    QAction* exitAct = fileMenu->addAction("Выход");
     exitAct->setShortcut(QKeySequence("Ctrl+Q"));
     connect(exitAct, &QAction::triggered, this, &QWidget::close);
 
-    QMenu* toolMenu = menuBar()->addMenu("&Инструменты");
+    QMenu* toolMenu = menuBar()->addMenu("Инструменты");
     QActionGroup* group = new QActionGroup(this);
     group->setExclusive(true);
 
@@ -119,36 +114,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         group->addAction(a);
     };
 
-    addTool("Создать полигон (ЛКМ — точка, ПКМ — завершить)",
-            Tool::CreatePolygon, "1");
-    addTool("Смещение",
-            Tool::MovePolygon, "2");
-    addTool("Поворот вокруг точки",
-            Tool::RotatePolygonAroundPoint, "3");
-    addTool("Поворот вокруг центра полигона",
-            Tool::RotatePolygonAroundCenter, "4");
-    addTool("Масштаб вокруг точки",
-            Tool::ScalePolygonAroundPoint, "5");
-    addTool("Масштаб вокруг центра полигона",
-            Tool::ScalePolygonAroundCenter, "6");
-    addTool("Пересечение двух рёбер",
-            Tool::EdgeIntersection, "7");
-    addTool("Принадлежность точки полигону",
-            Tool::PointInPolygon, "8");
-    addTool("Точка слева/справа от ребра",
-            Tool::PointSideOfEdge, "9");
+    addTool("Создать полигон (ЛКМ — точка, ПКМ — завершить)", Tool::CreatePolygon, "1");
+    addTool("Смещение", Tool::MovePolygon, "2");
+    addTool("Поворот вокруг точки", Tool::RotatePolygonAroundPoint, "3");
+    addTool("Поворот вокруг центра полигона", Tool::RotatePolygonAroundCenter, "4");
+    addTool("Масштаб вокруг точки", Tool::ScalePolygonAroundPoint, "5");
+    addTool("Масштаб вокруг центра полигона", Tool::ScalePolygonAroundCenter, "6");
+    addTool("Пересечение двух рёбер", Tool::EdgeIntersection, "7");
+    addTool("Принадлежность точки полигону", Tool::PointInPolygon, "8");
+    addTool("Точка слева/справа от ребра", Tool::PointSideOfEdge, "9");
 
     connect(group, &QActionGroup::triggered, this, &MainWindow::onToolChanged);
     group->actions().first()->setChecked(true);
     m_view->setTool(Tool::CreatePolygon);
 
-    m_statusLabel = new QLabel(
-        "Готово. ЛКМ — добавить точку, ПКМ — завершить полигон. "
-        "Средняя кнопка — панорамирование.", this);
+    m_statusLabel = new QLabel("Готово. ЛКМ — добавить точку, ПКМ — завершить полигон.", this);
     statusBar()->addWidget(m_statusLabel);
 
-    connect(m_view, &GraphicsView::statusMessage, this,
-            [this](const QString& msg) { m_statusLabel->setText(msg); });
+    connect(m_view, &GraphicsView::statusMessage, this, [this](const QString& msg) { m_statusLabel->setText(msg); });
 
     resize(1200, 800);
     setWindowTitle("Lab 4");

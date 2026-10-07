@@ -1,9 +1,7 @@
 #include "segmentintersection.h"
 #include <QtMath>
 
-bool segmentIntersection(const Point2D& a, const Point2D& b,
-                         const Point2D& c, const Point2D& d,
-                         Point2D& out, bool& insideSegments) {
+bool segmentIntersection(const Point2D& a, const Point2D& b, const Point2D& c, const Point2D& d, Point2D& out, bool& insideSegments) {
     double nx = -(d.y - c.y);
     double ny =  (d.x - c.x);
 

@@ -19,8 +19,7 @@ bool Polygon::isConvex() const {
         const Point2D& b = vertices[(i + 1) % n];
         const Point2D& c = vertices[(i + 2) % n];
 
-        double cross = (b.x - a.x) * (c.y - b.y)
-                       - (b.y - a.y) * (c.x - b.x);
+        double cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
         if (qAbs(cross) < 1e-9) continue;
 
         int s = (cross > 0) ? 1 : -1;
@@ -49,8 +48,7 @@ double distToSegment(const Point2D& p, const Point2D& a, const Point2D& b) {
     return std::sqrt(ddx * ddx + ddy * ddy);
 }
 
-void drawPolygon(QPainter& p, const Polygon& poly,
-                 const QColor& color, bool close) {
+void drawPolygon(QPainter& p, const Polygon& poly, const QColor& color, bool close) {
     if (poly.isEmpty()) return;
     p.setPen(QPen(color, 2));
     p.setBrush(Qt::NoBrush);

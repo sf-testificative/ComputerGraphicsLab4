@@ -85,10 +85,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
         } else {
             Polygon* poly = pickPolygonAt(m_polygons, p);
             if (poly) {
-                applyTransform(*poly,
-                               rotationAroundPoint(qDegreesToRadians(m_angleDeg),
-                                                   m_centerPoint.x,
-                                                   m_centerPoint.y));
+                applyTransform(*poly, rotationAroundPoint(qDegreesToRadians(m_angleDeg), m_centerPoint.x, m_centerPoint.y));
                 update();
             }
             m_hasCenterPoint = false;
@@ -118,8 +115,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
         } else {
             Polygon* poly = pickPolygonAt(m_polygons, p);
             if (poly) {
-                applyTransform(*poly,
-                               scaleAroundPoint(m_kx, m_ky, m_centerPoint.x, m_centerPoint.y));
+                applyTransform(*poly, scaleAroundPoint(m_kx, m_ky, m_centerPoint.x, m_centerPoint.y));
                 update();
             }
             m_hasCenterPoint = false;
@@ -172,9 +168,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
                 m_secondEdge[0], m_secondEdge[1],
                 m_intersectionPoint, inside);
             if (m_hasIntersection) {
-                emit statusMessage(QString("Пересечение: (%1, %2)")
-                                       .arg(m_intersectionPoint.x, 0, 'f', 2)
-                                       .arg(m_intersectionPoint.y, 0, 'f', 2));
+                emit statusMessage(QString("Пересечение: (%1, %2)").arg(m_intersectionPoint.x, 0, 'f', 2).arg(m_intersectionPoint.y, 0, 'f', 2));
             } else {
                 emit statusMessage("Прямые параллельны или совпадают");
             }
@@ -191,12 +185,8 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
         QStringList results;
         for (int i = 0; i < m_polygons.size(); ++i)
             if (pointInPolygon(m_polygons[i], p))
-                results << QString("Полигон #%1 (%2)")
-                               .arg(i + 1)
-                               .arg(m_polygons[i].isConvex() ? "выпуклый" : "невыпуклый");
-        emit statusMessage(results.isEmpty()
-                               ? "Точка не принадлежит ни одному полигону"
-                               : "Точка внутри: " + results.join(", "));
+                results << QString("Полигон #%1 (%2)").arg(i + 1).arg(m_polygons[i].isConvex() ? "выпуклый" : "невыпуклый");
+        emit statusMessage(results.isEmpty() ? "Точка не принадлежит ни одному полигону" : "Точка внутри: " + results.join(", "));
         m_testPoint = p;
         m_hasTestPoint = true;
         update();
@@ -225,8 +215,7 @@ void GraphicsView::mousePressEvent(QMouseEvent* e)
 
         double s = pointSideRelativeToEdge(m_sideEdgeA, m_sideEdgeB, p);
         QString side = (s > 0) ? "СЛЕВА" : (s < 0 ? "СПРАВА" : "НА ПРЯМОЙ");
-        emit statusMessage(
-            QString("Точка %1 относительно ребра (s = %2)").arg(side).arg(s, 0, 'f', 2));
+        emit statusMessage(QString("Точка %1 относительно ребра (s = %2)").arg(side).arg(s, 0, 'f', 2));
         update();
         break;
     }
@@ -306,10 +295,8 @@ void GraphicsView::paintEvent(QPaintEvent* e)
             double arrowWidth = 7.0;
 
             QPointF tip(midX + ux * arrowLen, midY + uy * arrowLen);
-            QPointF left(midX - ux * arrowLen + px * arrowWidth,
-                         midY - uy * arrowLen + py * arrowWidth);
-            QPointF right(midX - ux * arrowLen - px * arrowWidth,
-                          midY - uy * arrowLen - py * arrowWidth);
+            QPointF left(midX - ux * arrowLen + px * arrowWidth, midY - uy * arrowLen + py * arrowWidth);
+            QPointF right(midX - ux * arrowLen - px * arrowWidth, midY - uy * arrowLen - py * arrowWidth);
 
             QPolygonF arrow;
             arrow << tip << left << right;
